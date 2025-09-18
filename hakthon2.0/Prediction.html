@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediction | AI Crop Yield</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="Home.html" class="logo"><span>🌾</span>AI Crop Yield</a>
+            <ul>
+                <li><a href="Home.html">Home</a></li>
+                <li><a href="About.html">About</a></li>
+                <li><a href="Prediction.html" class="active">Prediction</a></li>
+                <!-- Optimization page removed -->
+                <li><a href="ChatBot.html">Chat Bot</a></li>
+            </ul>
+        </div>
+    </nav>
+    <main>
+        <h1>Prediction</h1>
+        <form id="prediction-form">
+            <fieldset class="card">
+                <legend><span class="icon">🌱</span> Crop Info</legend>
+                <label for="crop"><span class="icon">🌾</span> Crop Type</label>
+                <select id="crop" name="crop" required>
+                    <option value="" disabled selected>-- Select a Crop --</option>
+                    <option value="Wheat">Wheat</option>
+                    <option value="Corn">Corn</option>
+                    <option value="Rice">Rice</option>
+                    <option value="Soybean">Soybean</option>
+                </select>
+                <label for="area"><span class="icon">📏</span> Area (hectares)</label>
+                <input type="number" id="area" name="area" placeholder="e.g. 2.5" step="0.1" min="0.1" required>
+            </fieldset>
+            <fieldset class="card">
+                <legend><span class="icon">🧪</span> Soil Info</legend>
+                <label for="soil"><span class="icon">🧪</span> Soil Quality</label>
+                <select id="soil" name="soil" required>
+                    <option value="" disabled selected>-- Select a Soil Type --</option>
+                    <option value="Loam">Loam</option>
+                    <option value="Clay">Clay</option>
+                    <option value="Sandy">Sandy</option>
+                    <option value="Silt">Silt</option>
+                </select>
+            </fieldset>
+            <fieldset class="card">
+                <legend><span class="icon">☁️</span> Weather & Inputs</legend>
+                <label for="rain"><span class="icon">☔</span> Expected Rainfall (mm)</label>
+                <input type="number" id="rain" name="rain" placeholder="e.g. 300" min="0" required>
+                <label for="fertilizer"><span class="icon">🌿</span> Fertilizer Used (kg)</label>
+                <input type="number" id="fertilizer" name="fertilizer" placeholder="e.g. 50" min="0" required>
+            </fieldset>
+            <button type="submit" class="button">Predict Yield</button>
+        </form>
+        <div id="prediction-result"></div>
+    </main>
+    <footer>
+        &copy; 2025 AI Crop Yield | <a href="Home.html">Home</a>
+    </footer>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('prediction-form');
+            const resultDiv = document.getElementById('prediction-result');
+            const submitButton = form.querySelector('button');
+
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+
+                // 1. Show loading state
+                submitButton.disabled = true;
+                submitButton.textContent = 'Predicting...';
+                resultDiv.innerHTML = `<div class="result card" style="text-align:center;">Analyzing data...</div>`;
+
+                // 2. Collect form data
+                const formData = new FormData(form);
+                const data = Object.fromEntries(formData.entries());
+
+                // 3. Call the backend
+                try {
+                    const response = await fetch('http://localhost:5000/predict', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data),
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || `Server error: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+
+                    // 4. Display the result with a dynamic chart
+                    const yourYield = result.chartData.yourField;
+                    const avgYield = result.chartData.avgRegion;
+                    const chartUrl = `https://quickchart.io/chart?c={type:'bar',data:{labels:['Your Field','Avg. Region'],datasets:[{label:'Yield (tons/hectare)',data:[${yourYield},${avgYield}],backgroundColor:['#52b788','#b7e4c7']}]}}`;
+
+                    resultDiv.innerHTML = `
+                        <div class="result card" style="max-width:450px;margin:2em auto 0 auto;">
+                            <strong>${result.result}</strong>
+                            <div style='margin-top:1em;'>
+                                <img src="${chartUrl}" alt="Yield Comparison Chart" style="width:100%;max-width:400px;border-radius:8px;box-shadow:0 2px 8px #b7e4c7;">
+                            </div>
+                        </div>
+                    `;
+
+                } catch (error) {
+                    console.error('Prediction failed:', error);
+                    resultDiv.innerHTML = `<div class="result card" style="color: #d9534f; background: #f2dede; border-color: #ebccd1;"><strong>Error:</strong> ${error.message}</div>`;
+                } finally {
+                    // 5. Reset form state
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Predict Yield';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

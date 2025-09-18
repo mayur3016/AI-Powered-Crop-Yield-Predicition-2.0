@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Bot | AI Crop Yield</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="Home.html" class="logo"><span>🌾</span>AI Crop Yield</a>
+            <ul>
+                <li><a href="Home.html">Home</a></li>
+                <li><a href="About.html">About</a></li>
+                <li><a href="Prediction.html">Prediction</a></li>
+                <!-- Optimization page removed -->
+                <li><a href="ChatBot.html" class="active">Chat Bot</a></li>
+            </ul>
+        </div>
+    </nav>
+    <main>
+        <h1>AI Chat Bot</h1>
+        <div class="chatbot-container">
+            <div class="chatbot-header">AI Chat Bot</div>
+            <div class="chatbot-messages" id="chatbot-messages"></div>
+            <form class="chatbot-form" id="chatbot-form" autocomplete="off">
+                <input type="text" id="chatbot-input" placeholder="Type your question..." required />
+                <button type="submit" class="button" style="width:auto;">Send</button>
+            </form>
+        </div>
+    </main>
+    <footer>
+        &copy; 2025 AI Crop Yield | <a href="Home.html">Home</a>
+    </footer>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Enhanced chat bot logic for better UX
+            const form = document.getElementById('chatbot-form');
+            const input = document.getElementById('chatbot-input');
+            const sendButton = form.querySelector('button');
+            const messages = document.getElementById('chatbot-messages');
+
+            const appendMessage = (sender, text, id = null) => {
+                const msgDiv = document.createElement('div');
+                msgDiv.classList.add(sender === 'You' ? 'user-msg' : 'bot-msg');
+                if (id) {
+                    msgDiv.id = id;
+                }
+                
+                const senderStrong = document.createElement('strong');
+                senderStrong.textContent = `${sender}: `;
+                
+                msgDiv.appendChild(senderStrong);
+                msgDiv.appendChild(document.createTextNode(text)); // Safely append text
+                
+                messages.appendChild(msgDiv);
+                messages.scrollTop = messages.scrollHeight;
+            };
+
+            // Initial welcome message from the bot
+            appendMessage('Bot', 'Hello! Ask me about crop yields or our services.');
+
+            form.onsubmit = async function(e) {
+                e.preventDefault();
+                const userMsg = input.value.trim();
+                if (!userMsg) return;
+
+                appendMessage('You', userMsg);
+                input.value = '';
+
+                // Disable form and show typing indicator for better UX
+                input.disabled = true;
+                sendButton.disabled = true;
+                appendMessage('Bot', 'Typing...', 'typing-indicator');
+
+                const backendUrl = 'http://localhost:5000/chat';
+
+                try {
+                    const response = await fetch(backendUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: userMsg })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Server responded with status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    appendMessage('Bot', data.reply || 'Sorry, no response from backend.');
+                } catch (err) {
+                    console.error('Chatbot fetch error:', err);
+                    appendMessage('Bot', 'Sorry, there was a problem connecting to the server.');
+                } finally {
+                    // Remove typing indicator
+                    const typingIndicator = document.getElementById('typing-indicator');
+                    if (typingIndicator) {
+                        typingIndicator.remove();
+                    }
+
+                    // Re-enable form and focus input
+                    input.disabled = false;
+                    sendButton.disabled = false;
+                    input.focus();
+                }
+            };
+        });
+    </script>
+</body>
+</html>
